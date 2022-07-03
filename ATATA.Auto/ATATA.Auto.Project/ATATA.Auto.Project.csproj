@@ -9,6 +9,7 @@
     <PackageReference Include="Atata.Bootstrap" Version="2.0.0" />
     <PackageReference Include="Atata.Configuration.Json" Version="2.0.0" />
     <PackageReference Include="Atata.WebDriverExtras" Version="2.0.0" />
+    <PackageReference Include="NUnit.Allure" Version="1.2.1.1" />
   </ItemGroup>
 
   <ItemGroup>

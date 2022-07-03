@@ -1,8 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>net5.0</TargetFramework>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <Compile Remove="TestsResults\**" />
+	  <EmbeddedResource Remove="TestsResults\**" />
+	  <None Remove="TestsResults\**" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Atata" Version="2.0.1" />
@@ -12,6 +18,7 @@
 		<PackageReference Include="Atata.WebDriverSetup" Version="2.1.0" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.0" />
 		<PackageReference Include="NUnit" Version="3.13.3" />
+		<PackageReference Include="NUnit.Allure" Version="1.2.1.1" />
 		<PackageReference Include="NUnit3TestAdapter" Version="4.2.1" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
 	</ItemGroup>
@@ -22,9 +29,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <None Update="allureConfig.json">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
 	  <None Update="appsettings.json">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </None>
 	</ItemGroup>
+
 
 </Project>

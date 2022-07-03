@@ -2,6 +2,7 @@
 using ATATA.Auto.Project.PageObjects.Pages;
 using ATATA.Auto.Project.PageObjects.Pages.Project;
 using ATATA.Auto.Project.Utils;
+using NUnit.Allure.Attributes;
 
 namespace ATATA.Auto.Project.PageObjects.Steps
 {
@@ -15,7 +16,7 @@ namespace ATATA.Auto.Project.PageObjects.Steps
                 .RememberMe.Check()
                 .SignInButton.ClickAndGo<T>();
         }
-
+        
         public static T Login<T>(this SignInPage page, LaunchConfig.User currentUser) where T : Page<T>
         {
             return Login<T>(page, currentUser.Email, currentUser.Password);

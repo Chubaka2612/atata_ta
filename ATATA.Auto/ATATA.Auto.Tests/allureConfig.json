@@ -1,0 +1,6 @@
+﻿{
+  "allure": {
+    "directory": "allure-results",
+    "title": "ATATA - Allure Report"
+  }
+}

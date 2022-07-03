@@ -1,4 +1,5 @@
-﻿using Atata;
+﻿using Allure.Commons;
+using Atata;
 using ATATA.Auto.Core.Exceptions;
 using ATATA.Auto.Project.Utils;
 using NUnit.Framework;
@@ -14,6 +15,7 @@ namespace ATATA.Auto.Tests
         public void BeforeAll()
         {
             InitContext(); 
+            AllureLifecycle.Instance.CleanupResultDirectory();
             //AtataContext.Current?.Log.Info("Tests execution started");
         }
 
