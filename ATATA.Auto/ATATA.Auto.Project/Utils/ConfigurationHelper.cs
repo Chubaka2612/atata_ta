@@ -2,6 +2,7 @@
 using System.Linq;
 using Atata;
 using ATATA.Auto.Core.Exceptions;
+using ATATA.Auto.Core.Meta;
 
 namespace ATATA.Auto.Project.Utils
 {
@@ -10,6 +11,7 @@ namespace ATATA.Auto.Project.Utils
         private static AtataContextBuilder _configBuilder;
 
         private static string configFileName = "appsettings.json";
+
         public static AtataContextBuilder Configuration => GetConfiguration(configFileName);
 
         public static string MainUrl => Configuration.BuildingContext.BaseUrl;
@@ -22,7 +24,9 @@ namespace ATATA.Auto.Project.Utils
 
         public static TimeSpan WaitingRetryInterval => Configuration.BuildingContext.WaitingRetryInterval;
 
-        public static string SelectedBrowser => "Chrome";// should be set as a system variable. Was not able to set via config file, since atataContext should be built first
+        public static Browsers SelectedBrowser => Configuration.GetLaunchConfig().SelectedBrowser;
+
+        public static bool IsRemoteLaunchMode => Configuration.GetLaunchConfig().IsRemoteLaunchMode;
 
         public static string SelectedUserRole => Configuration.GetLaunchConfig().SelectedUserRole;
 

@@ -2,7 +2,6 @@
 using ATATA.Auto.Project.PageObjects.Pages;
 using ATATA.Auto.Project.PageObjects.Pages.Project;
 using ATATA.Auto.Project.Utils;
-using NUnit.Allure.Attributes;
 
 namespace ATATA.Auto.Project.PageObjects.Steps
 {

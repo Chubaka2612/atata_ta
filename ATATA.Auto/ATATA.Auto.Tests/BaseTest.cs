@@ -1,8 +1,15 @@
 ﻿using Allure.Commons;
 using Atata;
 using ATATA.Auto.Core.Exceptions;
+using ATATA.Auto.Core.Meta;
 using ATATA.Auto.Project.Utils;
 using NUnit.Framework;
+using NUnit.Framework.Interfaces;
+using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Firefox;
+using System;
+using System.Collections.Generic;
 
 namespace ATATA.Auto.Tests
 {
@@ -14,38 +21,41 @@ namespace ATATA.Auto.Tests
         [OneTimeSetUp]
         public void BeforeAll()
         {
-            InitContext(); 
             AllureLifecycle.Instance.CleanupResultDirectory();
-            //AtataContext.Current?.Log.Info("Tests execution started");
         }
 
         [OneTimeTearDown]
         public void AfterAll()
         {
-            //AtataContext.Current?.Log.Info("Tests execution finished");
+
+        }
+    }
+
+    
+    [TestFixture]
+    public class BaseTest
+    {
+       private Browsers browser;
+       private AtataContextBuilder atataBuilder;
+
+        [SetUp]
+        protected void BeforeEach()
+        {
+            InitContext();
         }
 
-        private void InitContext()
+        private void SetUpDriver() 
         {
-
-            var browser = ConfigurationHelper.SelectedBrowser;
-
-            var atataGlobalConfig = AtataContext
-                .GlobalConfiguration;
-
-            switch (browser)
+            if (ConfigurationHelper.IsRemoteLaunchMode)
             {
-                case "Firefox":
-                    atataGlobalConfig.UseFirefox();
-                    break;
-                case "Chrome":
-                    atataGlobalConfig.UseChrome();
-                    break;
-                default:
-                    throw new InitializationException($"Unknown '{browser}' driver type.");
+                SetRemoteLocalDriver();
+            }
+            else
+            {
+                SetUpLocalDriver();
             }
 
-            atataGlobalConfig.UseBaseUrl(ConfigurationHelper.MainUrl)
+            atataBuilder.UseBaseUrl(ConfigurationHelper.MainUrl)
                 .UseWaitingTimeout(ConfigurationHelper.WaitingTimeout)
                 .UseElementFindTimeout(ConfigurationHelper.ElementFindTimeout)
                 .UseWaitingRetryInterval(ConfigurationHelper.WaitingRetryInterval)
@@ -57,28 +67,27 @@ namespace ATATA.Auto.Tests
                 .AddFile()
                 .WithDirectoryPath(() => $@"TestsResults\ScreenShots\{AtataContext.BuildStart:yyyy-MM-dd HH_mm_ss}")
                 .WithFileName(screenshotInfo => $"{screenshotInfo.PageObjectName}_{AtataContext.Current.TestName}")
-                .AutoSetUpDriverToUse()
                 ;
         }
-    }
 
-    [TestFixture]
-    public class BaseTest
-    {
-        [SetUp]
-        protected void BeforeEach()
+
+        private void InitContext()
         {
+            browser = ConfigurationHelper.SelectedBrowser;
+            atataBuilder = AtataContext.Configure();
+
             SetUpDriver();
+          
+            atataBuilder.Build();
+            AtataContext.Current.Driver.Maximize();
         }
 
-        private void SetUpDriver()
+        private void SetUpLocalDriver()
         {
-            string browser = ConfigurationHelper.SelectedBrowser;
             switch (browser)
             {
-                case "Chrome":
-                    AtataContext
-                        .Configure()
+                case Browsers.Chrome:
+                    atataBuilder
                         .UseChrome()
                         .WithFixOfCommandExecutionDelay()
                         .WithArguments("--disable-notifications", "--no-sandbox", "disable-extensions")
@@ -87,30 +96,59 @@ namespace ATATA.Auto.Tests
                             option.AddUserProfilePreference("download.default_directory", ConfigurationHelper.DownloadsDirName);
                             option.AddUserProfilePreference("intl.accept_languages", "nl");
                             option.AddUserProfilePreference("disable-popup-blocking", "true");
-                        })
-                        .Build();
+                        }) ;
                     break;
-                case "Firefox":
-                    AtataContext
-                        .Configure()
+                case Browsers.Firefox:
+                    atataBuilder
                         .UseFirefox()
                         .WithFixOfCommandExecutionDelay()
-                        .WithOptions(option => option.SetPreference("dom.webnotifications.enabled", false))
-                        .Build();
+                        .WithOptions(option => option.SetPreference("dom.webnotifications.enabled", false));
                     break;
                 default:
                     throw new InitializationException($"No such browser {browser}");
             }
+            atataBuilder.AutoSetUpDriverToUse();
+        }
 
-            AtataContext.Current.Driver.Maximize();
+        private void SetRemoteLocalDriver()
+        {
+            DriverOptions browserOptions = browser switch
+            {
+                Browsers.Chrome => new ChromeOptions(),
+                Browsers.Firefox => new FirefoxOptions(),
+                _ => throw new InitializationException($"No such browser {browser}"),
+            };
+            browserOptions.AcceptInsecureCertificates = true;
+
+            browserOptions.PlatformName = ConfigurationHelper.Configuration.GetLaunchConfig().SauceLab.Platform;
+            browserOptions.BrowserVersion = ConfigurationHelper.Configuration.GetLaunchConfig().SauceLab.BrowserVersion;
+            browserOptions.AddAdditionalOption("username", ConfigurationHelper.Configuration.GetLaunchConfig().SauceLab.UserName);
+            browserOptions.AddAdditionalOption("accessKey", ConfigurationHelper.Configuration.GetLaunchConfig().SauceLab.AccessKey);
+            var sauceOptions = new Dictionary<string, object>
+            {
+                { "name", TestContext.CurrentContext.Test.Name },
+                { "build", "AtataBuid:" + DateTime.Now }
+            };
+            browserOptions.AddAdditionalOption("sauce:options", sauceOptions);
+
+            var uri = new Uri(ConfigurationHelper.Configuration.GetLaunchConfig().SauceLab.RemoteUri);
+
+            atataBuilder
+                       .UseRemoteDriver()
+                       .WithCapabilities(browserOptions.ToCapabilities())
+                       .WithRemoteAddress(uri)
+                       ;
         }
 
         [TearDown]
         public void AfterEach()
         {
+            var passed = TestContext.CurrentContext.Result.Outcome.Status == TestStatus.Passed;
+            ((IJavaScriptExecutor)AtataContext.Current.Driver).ExecuteScript("sauce:job-result=" + (passed ? "passed" : "failed"));
+
             AtataContext
-                .Current
-                .Driver
+                .Current?
+                .Driver?
                 .Manage()
                 .Cookies
                 .DeleteAllCookies();
